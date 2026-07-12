@@ -1,4 +1,4 @@
-import { initializeApp } from "https://esm.sh/firebase@10.12.2/app";
+import { initializeApp } from "https://esm.sh/firebase@10.12.2";
 import {
   getAuth,
   onAuthStateChanged,
