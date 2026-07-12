@@ -1,11 +1,11 @@
-import { initializeApp } from "https://esm.sh/firebase@10.12.2";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-} from "https://esm.sh/firebase@10.12.2/auth";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore,
   collection,
@@ -15,7 +15,7 @@ import {
   deleteDoc,
   onSnapshot,
   enableIndexedDbPersistence,
-} from "https://esm.sh/firebase@10.12.2/firestore";
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { firebaseConfig } from "./firebase-config.js";
 import { buildICS, downloadICS } from "./ics.js";
