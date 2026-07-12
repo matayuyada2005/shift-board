@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>シフト帳 - バイト管理</title>
+<meta name="description" content="時給・勤務先を登録してシフトと給与を管理するPWA" />
+
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#1E293B" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="シフト帳" />
+<link rel="icon" href="icons/icon-192.png" />
+
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ================= 認証画面 ================= -->
+<div id="auth-view">
+  <div class="auth-box">
+    <div class="auth-seal">勤</div>
+    <div class="auth-title">シフト帳</div>
+    <div class="auth-tagline">時給・勤務先を登録して、シフトと給与を一括管理</div>
+
+    <form id="auth-form">
+      <div class="field">
+        <label for="auth-email">メールアドレス</label>
+        <input id="auth-email" type="email" autocomplete="email" required />
+      </div>
+      <div class="field">
+        <label for="auth-password">パスワード(6文字以上)</label>
+        <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required />
+      </div>
+      <button type="submit" class="btn btn-stamp btn-block" id="auth-submit">ログイン</button>
+    </form>
+    <button class="auth-toggle" id="auth-toggle-mode">初めての方はこちら(新規登録)</button>
+    <div class="auth-error" id="auth-error"></div>
+    <p style="font-size:11px;color:var(--ink-soft);margin-top:18px;">
+      同じメールアドレスでログインすれば、PCとスマホでシフトが自動的に同期されます。
+    </p>
+  </div>
+</div>
+
+<!-- ================= アプリ本体 ================= -->
+<div id="app" class="hidden">
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-seal">勤</div>
+      <div>
+        <div class="brand-title">シフト帳</div>
+        <div class="brand-sub">SHIFT LEDGER</div>
+      </div>
+    </div>
+    <div id="user-chip"></div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="calendar">カレンダー</button>
+    <button class="tab-btn" data-tab="workplaces">バイト先</button>
+    <button class="tab-btn" data-tab="salary">給与</button>
+    <button class="tab-btn" data-tab="settings">設定</button>
+  </nav>
+
+  <main>
+    <!-- ---------- カレンダー ---------- -->
+    <section id="view-calendar" class="view">
+      <div class="cal-header">
+        <button class="cal-nav-btn" id="cal-prev">‹</button>
+        <div class="cal-title" id="cal-title">2026年7月</div>
+        <button class="cal-nav-btn" id="cal-next">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </section>
+
+    <!-- ---------- バイト先管理 ---------- -->
+    <section id="view-workplaces" class="view hidden">
+      <div class="section-title"><span class="eyebrow">WORKPLACES</span>バイト先一覧</div>
+      <div id="workplace-list"></div>
+      <button class="btn btn-block btn-ghost" id="add-workplace-btn">+ バイト先を追加</button>
+    </section>
+
+    <!-- ---------- 給与集計 ---------- -->
+    <section id="view-salary" class="view hidden">
+      <div class="month-picker">
+        <button class="cal-nav-btn" id="salary-prev">‹</button>
+        <span id="salary-month-label">2026年7月</span>
+        <button class="cal-nav-btn" id="salary-next">›</button>
+      </div>
+
+      <div class="card total-seal">
+        <div class="stamp-badge">確定<br/>見込</div>
+        <div class="label">今月の給与見込み合計</div>
+        <div class="amount"><span id="salary-total">0</span><small> 円</small></div>
+      </div>
+
+      <div class="card" id="salary-breakdown-card">
+        <div class="section-title"><span class="eyebrow">BREAKDOWN</span>バイト先ごとの内訳</div>
+        <div id="salary-breakdown"></div>
+      </div>
+    </section>
+
+    <!-- ---------- 設定 ---------- -->
+    <section id="view-settings" class="view hidden">
+      <div class="card">
+        <div class="section-title"><span class="eyebrow">CALENDAR</span>iPhoneカレンダーに登録</div>
+        <div class="setting-row">
+          <div>
+            <div>表示中の月の予定を書き出す</div>
+            <div class="setting-desc">.icsファイルをダウンロードし、iPhoneで開くとカレンダーに追加できます</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="export-month-ics">書き出す</button>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div>今後の予定をすべて書き出す</div>
+            <div class="setting-desc">今日以降のシフトをまとめて1つのファイルに</div>
+          </div>
+          <button class="btn btn-sm btn-ghost" id="export-all-ics">書き出す</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title"><span class="eyebrow">ACCOUNT</span>アカウント</div>
+        <div class="setting-row">
+          <div>
+            <div id="settings-email">-</div>
+            <div class="setting-desc">このアカウントのデータはPC/スマホで自動同期されます</div>
+          </div>
+        </div>
+        <button class="btn btn-block btn-danger" id="logout-btn" style="margin-top:10px;">ログアウト</button>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab hidden" id="fab-add-shift">＋</button>
+</div>
+
+<!-- ================= シフト追加/編集モーダル ================= -->
+<div class="modal-backdrop hidden" id="shift-modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="shift-modal-title">シフトを追加</div>
+      <button class="modal-close" data-close-modal>×</button>
+    </div>
+
+    <div id="day-existing-shifts"></div>
+
+    <form id="shift-form">
+      <input type="hidden" id="shift-id" />
+      <div class="field">
+        <label for="shift-date">日付</label>
+        <input type="date" id="shift-date" required />
+      </div>
+      <div class="field">
+        <label for="shift-workplace">バイト先</label>
+        <select id="shift-workplace" required></select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="shift-start">開始時刻</label>
+          <input type="time" id="shift-start" required />
+        </div>
+        <div class="field">
+          <label for="shift-end">終了時刻</label>
+          <input type="time" id="shift-end" required />
+        </div>
+      </div>
+      <div class="field">
+        <label for="shift-break">休憩時間(分)</label>
+        <input type="number" id="shift-break" min="0" step="5" value="0" />
+      </div>
+      <div class="field">
+        <label for="shift-memo">メモ(任意)</label>
+        <input type="text" id="shift-memo" placeholder="レジ担当、〆作業など" />
+      </div>
+      <div class="field" style="font-family:var(--font-mono);color:var(--brass);font-size:13px;" id="shift-pay-preview"></div>
+      <button type="submit" class="btn btn-stamp btn-block">保存する</button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= バイト先追加/編集モーダル ================= -->
+<div class="modal-backdrop hidden" id="workplace-modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="workplace-modal-title">バイト先を追加</div>
+      <button class="modal-close" data-close-modal>×</button>
+    </div>
+    <form id="workplace-form">
+      <input type="hidden" id="workplace-id" />
+      <div class="field">
+        <label for="workplace-name">勤務先名</label>
+        <input type="text" id="workplace-name" placeholder="例: カフェ〇〇 渋谷店" required />
+      </div>
+      <div class="field">
+        <label for="workplace-wage">時給(円)</label>
+        <input type="number" id="workplace-wage" min="0" step="1" required />
+      </div>
+      <div class="field">
+        <label>カラー</label>
+        <div class="color-swatches" id="workplace-color-swatches"></div>
+        <input type="hidden" id="workplace-color" />
+      </div>
+      <button type="submit" class="btn btn-stamp btn-block">保存する</button>
+    </form>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
